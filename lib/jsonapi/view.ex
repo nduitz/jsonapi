@@ -376,6 +376,51 @@ defmodule JSONAPI.View do
 
         def render("delete.json", %{data: data, conn: conn}),
           do: Serializer.serialize(__MODULE__, data, conn)
+
+        def render("show.json-api", %{data: data, conn: conn, meta: meta, options: options}),
+          do: Serializer.serialize(__MODULE__, data, conn, meta, options)
+
+        def render("show.json-api", %{data: data, conn: conn, meta: meta}),
+          do: Serializer.serialize(__MODULE__, data, conn, meta)
+
+        def render("show.json-api", %{data: data, conn: conn}),
+          do: Serializer.serialize(__MODULE__, data, conn)
+
+        def render("index.json-api", %{data: data, conn: conn, meta: meta, options: options}),
+          do: Serializer.serialize(__MODULE__, data, conn, meta, options)
+
+        def render("index.json-api", %{data: data, conn: conn, meta: meta}),
+          do: Serializer.serialize(__MODULE__, data, conn, meta)
+
+        def render("index.json-api", %{data: data, conn: conn}),
+          do: Serializer.serialize(__MODULE__, data, conn)
+
+        def render("create.json-api", %{data: data, conn: conn, meta: meta, options: options}),
+          do: Serializer.serialize(__MODULE__, data, conn, meta, options)
+
+        def render("create.json-api", %{data: data, conn: conn, meta: meta}),
+          do: Serializer.serialize(__MODULE__, data, conn, meta)
+
+        def render("create.json-api", %{data: data, conn: conn}),
+          do: Serializer.serialize(__MODULE__, data, conn)
+
+        def render("update.json-api", %{data: data, conn: conn, meta: meta, options: options}),
+          do: Serializer.serialize(__MODULE__, data, conn, meta, options)
+
+        def render("update.json-api", %{data: data, conn: conn, meta: meta}),
+          do: Serializer.serialize(__MODULE__, data, conn, meta)
+
+        def render("update.json-api", %{data: data, conn: conn}),
+          do: Serializer.serialize(__MODULE__, data, conn)
+
+        def render("delete.json-api", %{data: data, conn: conn, meta: meta, options: options}),
+          do: Serializer.serialize(__MODULE__, data, conn, meta, options)
+
+        def render("delete.json-api", %{data: data, conn: conn, meta: meta}),
+          do: Serializer.serialize(__MODULE__, data, conn, meta)
+
+        def render("delete.json-api", %{data: data, conn: conn}),
+          do: Serializer.serialize(__MODULE__, data, conn)
       else
         raise ArgumentError,
               "Attempted to call function that depends on Phoenix. " <>
