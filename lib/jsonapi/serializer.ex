@@ -7,6 +7,10 @@ defmodule JSONAPI.Serializer do
   alias JSONAPI.{Config, Utils, View}
   alias Plug.Conn
 
+  use Appsignal.Instrumentation.Decorators
+
+  @decorate_all transaction_event()
+
   @type document :: map()
 
   @doc """

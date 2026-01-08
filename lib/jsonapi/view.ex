@@ -1,5 +1,9 @@
 # credo:disable-for-this-file Credo.Check.Refactor.LongQuoteBlocks
 defmodule JSONAPI.View do
+  use Appsignal.Instrumentation.Decorators
+
+  @decorate_all transaction_event()
+
   @moduledoc """
   A View is simply a module that defines certain callbacks to configure proper
   rendering of your JSONAPI documents.

@@ -2,6 +2,9 @@ defmodule JSONAPI.Utils.String do
   @moduledoc """
   String manipulation helpers.
   """
+  use Appsignal.Instrumentation.Decorators
+
+  @decorate_all transaction_event()
 
   @allowed_transformations [
     :camelize,

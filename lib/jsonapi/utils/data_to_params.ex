@@ -4,6 +4,9 @@ defmodule JSONAPI.Utils.DataToParams do
   changeset casting.
   """
   alias JSONAPI.Utils.String, as: JString
+  use Appsignal.Instrumentation.Decorators
+
+  @decorate_all transaction_event()
 
   @spec process(map) :: map
   def process(%{"data" => nil}), do: nil

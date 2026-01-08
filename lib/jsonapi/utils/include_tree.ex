@@ -2,6 +2,9 @@ defmodule JSONAPI.Utils.IncludeTree do
   @moduledoc """
   Internal utility for building trees of resource relationships
   """
+  use Appsignal.Instrumentation.Decorators
+
+  @decorate_all transaction_event()
 
   @spec deep_merge(Keyword.t(), Keyword.t()) :: Keyword.t()
   def deep_merge(acc, []), do: acc

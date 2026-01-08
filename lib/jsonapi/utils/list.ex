@@ -1,5 +1,8 @@
 defmodule JSONAPI.Utils.List do
   @moduledoc false
+  use Appsignal.Instrumentation.Decorators
+
+  @decorate_all transaction_event()
 
   @doc """
   Transforms a Map into a List of Tuples that can be converted into a query string via URI.encode_query/1
