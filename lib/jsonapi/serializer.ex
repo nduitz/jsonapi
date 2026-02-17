@@ -60,10 +60,18 @@ defmodule JSONAPI.Serializer do
   def encode_data(view, data, conn, query_includes, options) do
     valid_includes = get_includes(view, query_includes, data)
 
+    transformed_fields = view.__tranformed_fields__()
+
+    attributes =
+      view.attributes(data, conn)
+      |> Map.new(fn {key, value} -> {Map.get(transformed_fields, key), value} end)
+
+    # attributes = transform_fields(view.attributes(data, conn))
+
     encoded_data = %{
       id: view.id(data),
       type: view.resource_type(data),
-      attributes: transform_fields(view.attributes(data, conn)),
+      attributes: attributes,
       relationships: %{}
     }
 

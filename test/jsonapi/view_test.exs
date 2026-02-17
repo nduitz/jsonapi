@@ -1,5 +1,6 @@
 defmodule JSONAPI.ViewTest do
   use ExUnit.Case
+  Application.put_env(:jsonapi, :field_transformation, :camelize)
 
   defmodule PostView do
     use JSONAPI.View, type: "posts", namespace: "/api"
@@ -18,8 +19,11 @@ defmodule JSONAPI.ViewTest do
   defmodule CommentView do
     use JSONAPI.View, type: "comments", namespace: "/api"
 
+    field(:body)
+    field(:raw_body)
+
     def fields do
-      [:body]
+      [:body, :raw_body]
     end
   end
 
@@ -88,7 +92,7 @@ defmodule JSONAPI.ViewTest do
   end
 
   setup do
-    Application.put_env(:jsonapi, :field_transformation, :underscore)
+    Application.put_env(:jsonapi, :field_transformation, :camelize)
     Application.put_env(:jsonapi, :namespace, "/other-api")
 
     on_exit(fn ->
@@ -256,8 +260,17 @@ defmodule JSONAPI.ViewTest do
   end
 
   test "show renders with data, conn" do
-    data = CommentView.render("show.json", %{data: %{id: 1, body: "hi"}, conn: %Plug.Conn{}})
-    assert data.data.attributes.body == "hi"
+    Benchee.run(
+      %{
+        "render" => fn -> CommentView.render("show.json", %{data: %{id: 1, body: "hi"}, conn: %Plug.Conn{}}) end
+      },
+      time: 10,
+      memory_time: 2
+    )
+    |> IO.inspect()
+
+    data = CommentView.render("show.json", %{data: %{id: 1, body: "hi", raw_body: "foo"}, conn: %Plug.Conn{}})
+    assert data.data.attributes["body"] == "hi"
   end
 
   test "show renders with data, conn, meta" do
