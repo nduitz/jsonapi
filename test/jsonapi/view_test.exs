@@ -1,6 +1,5 @@
 defmodule JSONAPI.ViewTest do
   use ExUnit.Case
-  Application.put_env(:jsonapi, :field_transformation, :camelize)
 
   defmodule PostView do
     use JSONAPI.View, type: "posts", namespace: "/api"
@@ -19,11 +18,8 @@ defmodule JSONAPI.ViewTest do
   defmodule CommentView do
     use JSONAPI.View, type: "comments", namespace: "/api"
 
-    field(:body)
-    field(:raw_body)
-
     def fields do
-      [:body, :raw_body]
+      [:body]
     end
   end
 
@@ -92,7 +88,7 @@ defmodule JSONAPI.ViewTest do
   end
 
   setup do
-    Application.put_env(:jsonapi, :field_transformation, :camelize)
+    Application.put_env(:jsonapi, :field_transformation, :underscore)
     Application.put_env(:jsonapi, :namespace, "/other-api")
 
     on_exit(fn ->
@@ -259,10 +255,9 @@ defmodule JSONAPI.ViewTest do
     assert {:render, 2} in CommentView.__info__(:functions)
   end
 
-  test "show renders with data, conn using compiled field transformations" do
-    data = CommentView.render("show.json", %{data: %{id: 1, body: "hi", raw_body: "foo"}, conn: %Plug.Conn{}})
-    assert data.data.attributes["body"] == "hi"
-    assert data.data.attributes["rawBody"] == "foo"
+  test "show renders with data, conn" do
+    data = CommentView.render("show.json", %{data: %{id: 1, body: "hi"}, conn: %Plug.Conn{}})
+    assert data.data.attributes.body == "hi"
   end
 
   test "show renders with data, conn, meta" do
@@ -284,7 +279,7 @@ defmodule JSONAPI.ViewTest do
       })
 
     data = Enum.at(data.data, 0)
-    assert data.attributes["body"] == "hi"
+    assert data.attributes.body == "hi"
   end
 
   test "index renders with data, conn, meta" do

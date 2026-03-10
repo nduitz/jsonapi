@@ -60,20 +60,10 @@ defmodule JSONAPI.Serializer do
   def encode_data(view, data, conn, query_includes, options) do
     valid_includes = get_includes(view, query_includes, data)
 
-    attributes =
-      case view.__transformed_fields__() do
-        nil ->
-          transform_fields(view.attributes(data, conn))
-
-        transformed_fields ->
-          view.attributes(data, conn)
-          |> Map.new(fn {key, value} -> {Map.get(transformed_fields, key), value} end)
-      end
-
     encoded_data = %{
       id: view.id(data),
       type: view.resource_type(data),
-      attributes: attributes,
+      attributes: transform_fields(view.attributes(data, conn)),
       relationships: %{}
     }
 
@@ -314,13 +304,103 @@ defmodule JSONAPI.Serializer do
 
   defp remove_links?, do: Application.get_env(:jsonapi, :remove_links, false)
 
-  defp transform_fields(fields) do
+  defp transform_fields(fields) when is_map(fields) do
     case Utils.String.field_transformation() do
-      :camelize -> Utils.String.expand_fields(fields, &Utils.String.camelize/1)
-      :dasherize -> Utils.String.expand_fields(fields, &Utils.String.dasherize/1)
-      :camelize_shallow -> Utils.String.expand_root_keys(fields, &Utils.String.camelize/1)
-      :dasherize_shallow -> Utils.String.expand_root_keys(fields, &Utils.String.dasherize/1)
-      _ -> fields
+      :camelize ->
+        cached_transform_map(fields, :camelize, &Utils.String.camelize/1, false)
+
+      :dasherize ->
+        cached_transform_map(fields, :dasherize, &Utils.String.dasherize/1, false)
+
+      :camelize_shallow ->
+        cached_transform_map(fields, :camelize_shallow, &Utils.String.camelize/1, true)
+
+      :dasherize_shallow ->
+        cached_transform_map(fields, :dasherize_shallow, &Utils.String.dasherize/1, true)
+
+      _ ->
+        fields
     end
   end
+
+  defp transform_fields(field) when is_atom(field) or is_binary(field) do
+    case Utils.String.field_transformation() do
+      t when t in [:camelize, :dasherize, :camelize_shallow, :dasherize_shallow] ->
+        cached_transform_field(field, t)
+
+      _ ->
+        field
+    end
+  end
+
+  defp cached_transform_map(map, transformation, fun, shallow?) do
+    Enum.into(map, %{}, fn {key, value} ->
+      transformed_key = cached_transform_field(key, transformation)
+
+      transformed_value =
+        if shallow? do
+          Utils.String.expand_fields(value, &to_string/1)
+        else
+          expand_value_deep(value, fun)
+        end
+
+      {transformed_key, transformed_value}
+    end)
+  end
+
+  defp cached_transform_field(field, transformation) do
+    cache_key = {field, transformation}
+
+    case ets_lookup(cache_key) do
+      nil ->
+        transformed = apply_field_transformation(field, transformation)
+        ets_insert(cache_key, transformed)
+        transformed
+
+      cached ->
+        cached
+    end
+  end
+
+  defp apply_field_transformation(field, t) when t in [:camelize, :camelize_shallow],
+    do: Utils.String.camelize(field)
+
+  defp apply_field_transformation(field, t) when t in [:dasherize, :dasherize_shallow],
+    do: Utils.String.dasherize(field)
+
+  defp ets_lookup(key) do
+    case :ets.lookup(:jsonapi_field_cache, key) do
+      [{^key, value}] -> value
+      [] -> nil
+    end
+  catch
+    :error, :badarg ->
+      init_cache_table()
+      nil
+  end
+
+  defp ets_insert(key, value) do
+    :ets.insert(:jsonapi_field_cache, {key, value})
+  catch
+    :error, :badarg ->
+      init_cache_table()
+      :ets.insert(:jsonapi_field_cache, {key, value})
+  end
+
+  defp init_cache_table do
+    :ets.new(:jsonapi_field_cache, [:set, :public, :named_table, {:read_concurrency, true}])
+  catch
+    :error, :badarg -> :ok
+  end
+
+  defp expand_value_deep(value, fun) when is_map(value), do: Utils.String.expand_fields(value, fun)
+
+  defp expand_value_deep(values, fun) when is_list(values) do
+    Enum.map(values, fn
+      s when is_binary(s) -> s
+      v -> expand_value_deep(v, fun)
+    end)
+  end
+
+  defp expand_value_deep(value, _fun), do: value
 end

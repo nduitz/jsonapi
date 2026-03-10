@@ -1,7 +1,5 @@
 # credo:disable-for-this-file Credo.Check.Refactor.LongQuoteBlocks
 defmodule JSONAPI.View do
-  alias JSONAPI.Utils.String, as: JString
-
   @moduledoc """
   A View is simply a module that defines certain callbacks to configure proper
   rendering of your JSONAPI documents.
@@ -254,8 +252,6 @@ defmodule JSONAPI.View do
     quote do
       alias JSONAPI.{Serializer, View}
 
-      import JSONAPI.View
-
       @behaviour View
 
       @resource_type unquote(type)
@@ -263,10 +259,6 @@ defmodule JSONAPI.View do
       @path unquote(path)
       @paginator unquote(paginator)
       @polymorphic_resource? unquote(polymorphic_resource?)
-      @before_compile JSONAPI.View
-      @field_transformation Application.compile_env(:jsonapi, :field_transformation)
-
-      Module.register_attribute(__MODULE__, :fields, accumulate: true)
 
       @impl View
       def id(nil), do: nil
@@ -476,49 +468,6 @@ defmodule JSONAPI.View do
               "Attempted to call function that depends on Phoenix. " <>
                 "Make sure Phoenix is part of your dependencies"
       end
-    end
-  end
-
-  defmacro field(field) do
-    quote do
-      Module.put_attribute(
-        __MODULE__,
-        :fields,
-        unquote(field)
-      )
-    end
-  end
-
-  defmacro __before_compile__(env) do
-    fields =
-      env.module
-      |> Module.get_attribute(:fields)
-
-    transformed_fields =
-      if fields == [] do
-        nil
-      else
-        field_transformations =
-          transform_fields(fields, Module.get_attribute(env.module, :field_transformation))
-
-        Enum.zip(fields, field_transformations)
-        |> Map.new()
-      end
-
-    quote do
-      def __transformed_fields__ do
-        unquote(Macro.escape(transformed_fields))
-      end
-    end
-  end
-
-  defp transform_fields(fields, transformation) do
-    case transformation do
-      :camelize -> JString.expand_fields(fields, &JString.camelize/1)
-      :camelize_shallow -> JString.expand_fields(fields, &JString.camelize/1)
-      :dasherize -> JString.expand_fields(fields, &JString.dasherize/1)
-      :dasherize_shallow -> JString.expand_fields(fields, &JString.dasherize/1)
-      _ -> fields
     end
   end
 
