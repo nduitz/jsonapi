@@ -52,7 +52,8 @@ defmodule JSONAPI.Mixfile do
       {:earmark, ">= 0.0.0", only: :dev},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:phoenix, "~> 1.3", only: :test},
-      {:dialyxir, "~> 1.4.2", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4.2", only: [:dev, :test], runtime: false},
+      {:benchee, "~> 1.5", only: :test}
     ]
   end
 

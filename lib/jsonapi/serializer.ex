@@ -304,7 +304,25 @@ defmodule JSONAPI.Serializer do
 
   defp remove_links?, do: Application.get_env(:jsonapi, :remove_links, false)
 
-  defp transform_fields(fields) when is_map(fields) do
+  defp transform_fields(fields) do
+    if cache_field_transformations?() do
+      transform_fields_cached(fields)
+    else
+      transform_fields_uncached(fields)
+    end
+  end
+
+  defp transform_fields_uncached(fields) do
+    case Utils.String.field_transformation() do
+      :camelize -> Utils.String.expand_fields(fields, &Utils.String.camelize/1)
+      :dasherize -> Utils.String.expand_fields(fields, &Utils.String.dasherize/1)
+      :camelize_shallow -> Utils.String.expand_root_keys(fields, &Utils.String.camelize/1)
+      :dasherize_shallow -> Utils.String.expand_root_keys(fields, &Utils.String.dasherize/1)
+      _ -> fields
+    end
+  end
+
+  defp transform_fields_cached(fields) when is_map(fields) do
     case Utils.String.field_transformation() do
       :camelize ->
         cached_transform_map(fields, :camelize, &Utils.String.camelize/1, false)
@@ -323,7 +341,7 @@ defmodule JSONAPI.Serializer do
     end
   end
 
-  defp transform_fields(field) when is_atom(field) or is_binary(field) do
+  defp transform_fields_cached(field) when is_atom(field) or is_binary(field) do
     case Utils.String.field_transformation() do
       t when t in [:camelize, :dasherize, :camelize_shallow, :dasherize_shallow] ->
         cached_transform_field(field, t)
@@ -331,6 +349,10 @@ defmodule JSONAPI.Serializer do
       _ ->
         field
     end
+  end
+
+  defp cache_field_transformations? do
+    Application.get_env(:jsonapi, :cache_field_transformations, true)
   end
 
   defp cached_transform_map(map, transformation, fun, shallow?) do
