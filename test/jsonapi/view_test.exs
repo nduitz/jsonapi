@@ -259,18 +259,10 @@ defmodule JSONAPI.ViewTest do
     assert {:render, 2} in CommentView.__info__(:functions)
   end
 
-  test "show renders with data, conn" do
-    Benchee.run(
-      %{
-        "render" => fn -> CommentView.render("show.json", %{data: %{id: 1, body: "hi"}, conn: %Plug.Conn{}}) end
-      },
-      time: 10,
-      memory_time: 2
-    )
-    |> IO.inspect()
-
+  test "show renders with data, conn using compiled field transformations" do
     data = CommentView.render("show.json", %{data: %{id: 1, body: "hi", raw_body: "foo"}, conn: %Plug.Conn{}})
     assert data.data.attributes["body"] == "hi"
+    assert data.data.attributes["rawBody"] == "foo"
   end
 
   test "show renders with data, conn, meta" do
@@ -292,7 +284,7 @@ defmodule JSONAPI.ViewTest do
       })
 
     data = Enum.at(data.data, 0)
-    assert data.attributes.body == "hi"
+    assert data.attributes["body"] == "hi"
   end
 
   test "index renders with data, conn, meta" do

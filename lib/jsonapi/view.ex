@@ -494,15 +494,19 @@ defmodule JSONAPI.View do
       env.module
       |> Module.get_attribute(:fields)
 
-    field_transformations =
-      transform_fields(fields, Module.get_attribute(env.module, :field_transformation))
-
     transformed_fields =
-      Enum.zip(fields, field_transformations)
-      |> Map.new()
+      if fields == [] do
+        nil
+      else
+        field_transformations =
+          transform_fields(fields, Module.get_attribute(env.module, :field_transformation))
+
+        Enum.zip(fields, field_transformations)
+        |> Map.new()
+      end
 
     quote do
-      def __tranformed_fields__ do
+      def __transformed_fields__ do
         unquote(Macro.escape(transformed_fields))
       end
     end
